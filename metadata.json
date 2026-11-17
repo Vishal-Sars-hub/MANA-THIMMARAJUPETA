@@ -1,0 +1,6 @@
+{
+  "name": "Thimmarajupeta Panchayat Chronicle",
+  "description": "Public chronicle of civic infrastructure, water, sanitation, health, education, and cultural development works in Thimmarajupeta Grama Panchayat (2021–2026).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
