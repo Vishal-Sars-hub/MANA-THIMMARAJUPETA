@@ -1,20 +1,59 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --text-xs: 0.8625rem;
+  --text-xs--line-height: calc(1 / 0.75);
+  --text-sm: 1.00625rem;
+  --text-sm--line-height: calc(1.25 / 0.875);
+  --text-base: 1.15rem;
+  --text-base--line-height: calc(1.5 / 1);
+  --text-lg: 1.29375rem;
+  --text-lg--line-height: calc(1.75 / 1.125);
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: calc(1.75 / 1.25);
+  --text-2xl: 1.725rem;
+  --text-2xl--line-height: calc(2 / 1.5);
+  --text-3xl: 2.15625rem;
+  --text-3xl--line-height: calc(2.25 / 1.875);
+  --text-4xl: 2.5875rem;
+  --text-4xl--line-height: calc(2.5 / 2.25);
+  --text-5xl: 3.45rem;
+  --text-5xl--line-height: 1;
+}
+
 @layer base {
   :root {
-    --font-display: 'Fraunces', 'Noto Sans Telugu', Georgia, serif;
-    --font-sans: 'Plus Jakarta Sans', 'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
+    --font-display: 'Nueva Std', 'Nueva', 'Adobe Caslon Pro', 'Big Caslon', 'Libre Caslon Display', 'Libre Caslon Text', 'Dharani', 'Suranna', 'Noto Serif Telugu', Georgia, serif;
+    --font-sans: 'Adobe Caslon Pro', 'Libre Caslon Text', 'Nueva Std', 'Nueva', 'Anupama Medium', 'Anupama', 'Dharani', 'Noto Sans Telugu', Georgia, serif;
+    --font-telugu-display: 'Dharani', 'Anupama Medium', 'Suranna', 'Noto Serif Telugu', serif;
+    --font-telugu-body: 'Anupama Medium', 'Anupama', 'Dharani', 'Noto Sans Telugu', sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   }
 
   html {
     font-family: var(--font-sans);
   }
+
+  body {
+    font-size: 1.15rem;
+  }
+
+  html[lang="te"] {
+    font-family: var(--font-telugu-body);
+  }
 }
 
 .font-display {
   font-family: var(--font-display);
+}
+
+html[lang="te"] .font-display {
+  font-family: var(--font-telugu-display);
+}
+
+.font-telugu {
+  font-family: var(--font-telugu-body);
 }
 
 .font-mono-tabular {

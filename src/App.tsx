@@ -29,6 +29,11 @@ import {
   type PanchayatWork,
   type VolumeId,
 } from './data/panchayatWorks';
+import {
+  TELUGU_VOLUMES,
+  TELUGU_WORK_META,
+  TELUGU_YEAR_SUMMARIES,
+} from './data/teluguTranslations';
 import { ResilientImage } from './components/ResilientImage';
 import { WorkDetailModal } from './components/WorkDetailModal';
 
@@ -68,6 +73,8 @@ export default function App() {
   const [activeWork, setActiveWork] = useState<PanchayatWork | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  const isTe = langMode === 'te';
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -78,6 +85,13 @@ export default function App() {
       localStorage.setItem('tp_theme', 'light');
     }
   }, [isDark]);
+
+  useEffect(() => {
+    document.documentElement.lang = isTe ? 'te' : 'en';
+    document.title = isTe
+      ? 'మన తిమ్మరాజుపేట — గ్రామ పంచాయతీ అభివృద్ధి పనులు (2021–2026)'
+      : 'MANA THIMMARAJUPETA — Development Works 2021–2026';
+  }, [isTe]);
 
   const writtenWorksCount = useMemo(
     () => PANCHAYAT_WORKS.filter((w) => !w.isPhotoOnly).length,
@@ -96,9 +110,11 @@ export default function App() {
       if (selectedVolume !== 'all' && w.volume !== selectedVolume) return false;
       if (selectedCategory !== 'all' && w.category !== selectedCategory) return false;
       if (!q) return true;
+      const teTitle = TELUGU_WORK_META[w.id]?.teTitle ?? '';
       return (
         w.enTitle.toLowerCase().includes(q) ||
         w.enSummary.toLowerCase().includes(q) ||
+        teTitle.toLowerCase().includes(q) ||
         w.teText.toLowerCase().includes(q) ||
         w.dateLabel.toLowerCase().includes(q) ||
         w.teDate.toLowerCase().includes(q)
@@ -157,7 +173,9 @@ export default function App() {
 
   const handleWhatsAppShare = () => {
     const text = encodeURIComponent(
-      `Thimmarajupeta Grama Panchayat Development Chronicle (2021–2026) — All civic works, timeline & photos: ${window.location.href}`
+      isTe
+        ? `మన తిమ్మరాజుపేట (2021–2026) — అన్ని అభివృద్ధి పనులు, టైమ్‌లైన్ & ఫోటోలు: ${window.location.href}`
+        : `MANA THIMMARAJUPETA (2021–2026) — All civic works, timeline & photos: ${window.location.href}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer');
   };
@@ -167,56 +185,72 @@ export default function App() {
   };
 
   const getWorkTitle = (w: PanchayatWork) => {
-    if (langMode === 'te') return w.teDate;
+    if (isTe) return TELUGU_WORK_META[w.id]?.teTitle || w.teDate;
     return w.enTitle;
   };
 
   const getWorkBody = (w: PanchayatWork) => {
-    if (langMode === 'te') return w.teText || w.enSummary;
+    if (isTe) {
+      return (
+        w.teText ||
+        `${w.teDate} నాటి క్షేత్ర స్థాయి ఫోటోగ్రాఫ్ రికార్డు (${TELUGU_VOLUMES[w.volume].shortLabel}).`
+      );
+    }
     return w.enSummary;
   };
 
+  const getWorkHighlight = (w: PanchayatWork) => {
+    if (!w.highlightMetric) return undefined;
+    if (isTe) return TELUGU_WORK_META[w.id]?.teHighlight || w.highlightMetric;
+    return w.highlightMetric;
+  };
+
+  const getWorkDate = (w: PanchayatWork) => (isTe ? w.teDate : w.dateLabel);
+
+  const getVolumeLabel = (v: VolumeId) =>
+    isTe ? TELUGU_VOLUMES[v].shortLabel : VOLUMES[v].shortLabel;
+
   return (
-    <div className="min-h-screen bg-[#FFFBEB] text-[#27120B] dark:bg-[#090A09] dark:text-[#F5F5F4] transition-colors duration-200">
+    <div className="min-h-screen bg-[#FFFDF4] text-[#27120B] dark:bg-[#090A09] dark:text-[#F5F5F4] transition-colors duration-200">
       {/* Strict 3-Zone Top Bar */}
-      <header className="sticky top-0 z-40 border-b border-[#F3DF9E] dark:border-[#1E291E] bg-[#FFFBEB]/95 dark:bg-[#090A09]/95 backdrop-blur-md no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      <header className="sticky top-0 z-40 border-b border-[#F3E4AF] dark:border-[#1E291E] bg-[#FFFDF4]/95 dark:bg-[#090A09]/95 backdrop-blur-md no-print">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 lg:gap-8">
           {/* Zone 1: Single-line Wordmark */}
           <a
             href="#top"
             className="font-display text-lg sm:text-xl font-bold tracking-tight text-[#B91C1C] dark:text-[#F97316] whitespace-nowrap shrink-0"
           >
-            Thimmarajupeta Chronicle
+            {isTe ? 'మన తిమ్మరాజుపేట' : 'MANA THIMMARAJUPETA'}
           </a>
 
           {/* Zone 2: 4 Single-line Nav Links */}
           <nav
-            aria-label="Primary navigation"
-            className="hidden md:flex items-center gap-6 text-sm font-medium text-[#5C2818] dark:text-[#D6D3D1]"
+            aria-label={isTe ? 'ప్రధాన నావిగేషన్' : 'Primary navigation'}
+            className="hidden md:flex items-center gap-4 lg:gap-6 text-sm font-medium text-[#5C2818] dark:text-[#D6D3D1]"
           >
             <a
               href="#featured"
               className="hover:text-[#B91C1C] dark:hover:text-[#FB923C] hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
-              Featured
+              {isTe ? 'ప్రధాన పనులు' : 'Featured'}
             </a>
             <a
               href="#categories"
               className="hover:text-[#B91C1C] dark:hover:text-[#FB923C] hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
-              Categories
+              {isTe ? 'విభాగాలు' : 'Categories'}
             </a>
             <a
               href="#timeline"
               className="hover:text-[#B91C1C] dark:hover:text-[#FB923C] hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
-              Timeline
+              {isTe ? 'టైమ్‌లైన్' : 'Timeline'}
             </a>
             <a
               href="#archives"
               className="hover:text-[#B91C1C] dark:hover:text-[#FB923C] hover:underline underline-offset-4 transition-colors whitespace-nowrap shrink-0"
             >
-              Archives
+              {isTe ? 'మూల డైరీలు' : 'Archives'}
             </a>
           </nav>
 
@@ -230,12 +264,12 @@ export default function App() {
               {copiedLink ? (
                 <>
                   <Check className="w-4 h-4" aria-hidden="true" />
-                  <span>Link Copied</span>
+                  <span>{isTe ? 'లింక్ కాపీ అయింది' : 'Link Copied'}</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-4 h-4" aria-hidden="true" />
-                  <span>Share Page</span>
+                  <span>{isTe ? 'షేర్ చేయండి' : 'Share Page'}</span>
                 </>
               )}
             </button>
@@ -245,18 +279,18 @@ export default function App() {
 
       <main id="top">
         {/* Hero Section + Utility Bar (Theme Toggle & Language Mode) */}
-        <section className="border-b border-[#F3DF9E] dark:border-[#1E291E]">
+        <section className="border-b border-[#F3E4AF] dark:border-[#1E291E]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 lg:pb-16">
             {/* Utility Bar: Explicit Theme Toggle + Language Switcher */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-[#F3DF9E] dark:border-[#1E291E] no-print">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-[#F3E4AF] dark:border-[#1E291E] no-print">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-[#7C2D12] dark:text-[#4ADE80] whitespace-nowrap shrink-0">
-                  Color Theme
+                  {isTe ? 'రంగుల థీమ్' : 'Color Theme'}
                 </span>
                 <div
                   role="group"
-                  aria-label="Theme switcher"
-                  className="inline-flex items-center p-1 rounded-lg bg-[#FEF3C7] dark:bg-[#141814] border border-[#F5D08A] dark:border-[#243224]"
+                  aria-label={isTe ? 'రంగుల థీమ్ ఎంపిక' : 'Theme switcher'}
+                  className="inline-flex items-center p-1 rounded-lg bg-[#FEF7DA] dark:bg-[#141814] border border-[#EFE0A8] dark:border-[#243224]"
                 >
                   <button
                     type="button"
@@ -269,7 +303,7 @@ export default function App() {
                     }`}
                   >
                     <Sun className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Light · Yellow &amp; Red</span>
+                    <span>{isTe ? 'లైట్ · పసుపు & ఎరుపు' : 'Light · Yellow & Red'}</span>
                   </button>
                   <button
                     type="button"
@@ -282,24 +316,24 @@ export default function App() {
                     }`}
                   >
                     <Moon className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Dark · Black, Orange &amp; Green</span>
+                    <span>{isTe ? 'డార్క్ · నలుపు, ఆరెంజ్ & ఆకుపచ్చ' : 'Dark · Black, Orange & Green'}</span>
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <span className="text-xs font-medium text-[#7C2D12] dark:text-[#4ADE80] whitespace-nowrap shrink-0">
-                  Language
+                  {isTe ? 'భాష' : 'Language'}
                 </span>
                 <div
                   role="group"
-                  aria-label="Display language"
-                  className="inline-flex items-center p-1 rounded-lg bg-[#FEF3C7] dark:bg-[#141814] border border-[#F5D08A] dark:border-[#243224]"
+                  aria-label={isTe ? 'భాష ఎంపిక' : 'Display language'}
+                  className="inline-flex items-center p-1 rounded-lg bg-[#FEF7DA] dark:bg-[#141814] border border-[#EFE0A8] dark:border-[#243224]"
                 >
                   {(
                     [
-                      ['bilingual', 'Bilingual'],
-                      ['en', 'English'],
+                      ['bilingual', isTe ? 'ద్విభాష' : 'Bilingual'],
+                      ['en', isTe ? 'ఆంగ్లం' : 'English'],
                       ['te', 'తెలుగు'],
                     ] as const
                   ).map(([mode, label]) => (
@@ -326,21 +360,23 @@ export default function App() {
               <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#B91C1C] dark:text-[#4ADE80] font-semibold">
-                    Atchutapuram Mandal · Public Works Archive · 2021–2026
+                    {isTe
+                      ? 'అచ్యుతాపురం మండలం · ప్రజా అభివృద్ధి పనుల నివేదిక · 2021–2026'
+                      : 'Atchutapuram Mandal · Public Works Archive · 2021–2026'}
                   </p>
-                  <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.1rem] font-semibold leading-[1.12] tracking-tight text-[#27120B] dark:text-[#FAFAF9] [text-wrap:balance]">
-                    {langMode === 'te'
-                      ? 'తిమ్మరాజుపేట గ్రామ పంచాయతీ అభివృద్ధి డైరీ (2021–2026)'
-                      : 'Thimmarajupeta Panchayat Development Chronicle'}
+                  <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.565rem] font-semibold leading-[1.15] tracking-tight text-[#27120B] dark:text-[#FAFAF9] [text-wrap:balance]">
+                    {isTe
+                      ? 'మన తిమ్మరాజుపేట'
+                      : 'MANA THIMMARAJUPETA'}
                   </h1>
-                  {langMode !== 'te' && (
-                    <p className="text-base sm:text-lg font-medium text-[#7C2D12] dark:text-[#FB923C]">
-                      తిమ్మరాజుపేట గ్రామ పంచాయతీ అభివృద్ధి పనుల సంపూర్ణ నివేదిక
+                  {langMode === 'bilingual' && (
+                    <p className="font-telugu text-base sm:text-lg font-medium text-[#7C2D12] dark:text-[#FB923C]">
+                      మన తిమ్మరాజుపేట · గ్రామ పంచాయతీ అభివృద్ధి పనుల సంపూర్ణ నివేదిక (2021–2026)
                     </p>
                   )}
                   <p className="text-base leading-relaxed text-[#4A2013] dark:text-[#D6D3D1] max-w-2xl">
-                    {langMode === 'te'
-                      ? 'సర్పంచ్ శరగడం భాగ్యలక్ష్మి శివబాపునాయుడు గారు, ఉపసర్పంచ్ భీశెట్టి రాము గారు, పంచాయతీ పాలకవర్గం, గ్రామ ఉత్సవ కమిటీ, యువజన సంఘాలు మరియు దాతల సహకారంతో 2021 నుంచి 2026 వరకు మూడు బ్లాగ్ డైరీలలో నమోదు చేసిన సమగ్ర అభివృద్ధి పనుల జాబితా.'
+                    {isTe
+                      ? 'సర్పంచ్ శరగడం భాగ్యలక్ష్మి శివబాపునాయుడు గారు, ఉపసర్పంచ్ భీశెట్టి రాము గారు, వార్డు సభ్యులు, గ్రామ ఉత్సవ కమిటీ, యువజన సంఘాలు మరియు దాతల సహకారంతో 2021 నుంచి 2026 వరకు మూడు బ్లాగ్ డైరీలలో నమోదు చేసిన సమగ్ర అభివృద్ధి పనుల జాబితా.'
                       : 'A unified, shareable public ledger combining all three Grama Development Diaries (2021–2022, 2022–2023, and 2024–2026) under Sarpanch Saragadam Bhagyalakshmi Siva Bapu Naidu, Vice Sarpanch Beesetti Ramu, Panchayat Ward Members, Utsava Committee, Youth Associations, and Village Donors.'}
                   </p>
                 </div>
@@ -351,80 +387,105 @@ export default function App() {
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold bg-[#B91C1C] text-white hover:bg-[#991B1B] dark:bg-[#EA580C] dark:hover:bg-[#C2410C] transition-colors whitespace-nowrap shrink-0"
                   >
                     <Calendar className="w-4 h-4" aria-hidden="true" />
-                    <span>Explore 2021–2026 Timeline</span>
+                    <span>{isTe ? '2021–2026 టైమ్‌లైన్ చూడండి' : 'Explore 2021–2026 Timeline'}</span>
                   </a>
                   <a
                     href="#categories"
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold border border-[#B91C1C]/35 text-[#991B1B] bg-[#FEF3C7]/70 hover:bg-[#FEF3C7] dark:border-[#22C55E]/40 dark:text-[#4ADE80] dark:bg-[#131A13] dark:hover:bg-[#192419] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold border border-[#B91C1C]/35 text-[#991B1B] bg-[#FEF7DA]/80 hover:bg-[#FEF7DA] dark:border-[#22C55E]/40 dark:text-[#4ADE80] dark:bg-[#131A13] dark:hover:bg-[#192419] transition-colors whitespace-nowrap shrink-0"
                   >
-                    <span>Browse by Category</span>
+                    <span>{isTe ? 'విభాగాల వారీగా చూడండి' : 'Browse by Category'}</span>
                     <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
                   </a>
                 </div>
               </div>
 
               <div className="lg:col-span-5 flex flex-col">
-                <div className="relative flex-1 min-h-[260px] lg:min-h-[340px] rounded-xl overflow-hidden border border-[#E5C97B] dark:border-[#263326] bg-[#FEF3C7] dark:bg-[#121612]">
-                  <ResilientImage
-                    src="/src/assets/images/hero_thimmarajupeta_village_1794880861388.jpg"
-                    alt="Thimmarajupeta Grama Panchayat concrete street, streetlights, and civic plaza"
-                    fallbackLabel="Thimmarajupeta Grama Panchayat"
-                    className="w-full h-full lg:h-full object-cover"
-                  />
+                <div className="grid grid-cols-2 gap-2.5 flex-1 min-h-[260px] lg:min-h-[340px]">
+                  {(['2021-08', '2021-27', '2022-04', '2024-2026-33'] as const).map((heroId) => {
+                    const heroWork = PANCHAYAT_WORKS.find((w) => w.id === heroId);
+                    if (!heroWork || heroWork.images.length === 0) return null;
+                    const heroTitle = getWorkTitle(heroWork);
+                    const heroDate = getWorkDate(heroWork);
+                    return (
+                      <button
+                        key={heroWork.id}
+                        type="button"
+                        onClick={() => setActiveWork(heroWork)}
+                        className="relative overflow-hidden rounded-xl border border-[#EFE0A8] dark:border-[#263326] bg-[#FEF7DA] dark:bg-[#121612] group text-left min-h-[130px]"
+                        aria-label={heroTitle}
+                      >
+                        <ResilientImage
+                          src={heroWork.images[0]}
+                          alt={heroTitle}
+                          fallbackLabel={heroDate}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5">
+                          <p className="text-[13px] font-mono-tabular text-white/95 font-medium truncate">
+                            {heroDate}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
                 <p className="text-xs text-[#6B3423] dark:text-[#A8A29E] italic mt-2.5">
-                  Fig. 1 — Village main street CC road, roadside drainage, streetlights, and Grama Panchayat office representation.
+                  {isTe
+                    ? '2021–2026 గ్రామ డెవలప్మెంట్ డైరీల నుండి సేకరించిన అసలు క్షేత్ర ఫోటోలు. పూర్తి వివరాలకు ఫోటోపై క్లిక్ చేయండి.'
+                    : 'Field photographs archived directly from the 2021–2026 Grama Development Diaries. Click any photo to inspect its record.'}
                 </p>
               </div>
             </div>
 
             {/* 4-Column Institutional Summary Strip */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-10 pt-8 border-t border-[#F3DF9E] dark:border-[#1E291E]">
-              <div className="p-4 rounded-xl bg-white/85 dark:bg-[#121512] border border-[#F3DF9E] dark:border-[#222D22]">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-10 pt-8 border-t border-[#F3E4AF] dark:border-[#1E291E]">
+              <div className="p-4 rounded-xl bg-white/90 dark:bg-[#121512] border border-[#F3E4AF] dark:border-[#222D22]">
                 <p className="font-mono-tabular text-2xl sm:text-3xl font-bold text-[#B91C1C] dark:text-[#F97316]">
                   {writtenWorksCount}
                 </p>
                 <p className="text-xs sm:text-sm font-medium text-[#4A2013] dark:text-[#D6D3D1] mt-1">
-                  Documented Civic Works
+                  {isTe ? 'నమోదు చేసిన అభివృద్ధి పనులు' : 'Documented Civic Works'}
                 </p>
                 <p className="text-xs text-[#7C2D12]/80 dark:text-[#A8A29E] mt-0.5">
-                  {PANCHAYAT_WORKS.length} total dated records
+                  {isTe
+                    ? `మొత్తం ${PANCHAYAT_WORKS.length} తేదీల రికార్డులు`
+                    : `${PANCHAYAT_WORKS.length} total dated records`}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-white/85 dark:bg-[#121512] border border-[#F3DF9E] dark:border-[#222D22]">
+              <div className="p-4 rounded-xl bg-white/90 dark:bg-[#121512] border border-[#F3E4AF] dark:border-[#222D22]">
                 <p className="font-mono-tabular text-2xl sm:text-3xl font-bold text-[#B91C1C] dark:text-[#4ADE80]">
                   {TOTAL_PHOTO_COUNT}
                 </p>
                 <p className="text-xs sm:text-sm font-medium text-[#4A2013] dark:text-[#D6D3D1] mt-1">
-                  Field Photographs Archived
+                  {isTe ? 'సేకరించిన క్షేత్ర ఫోటోలు' : 'Field Photographs Archived'}
                 </p>
                 <p className="text-xs text-[#7C2D12]/80 dark:text-[#A8A29E] mt-0.5">
-                  Linked directly from field logs
+                  {isTe ? 'డైరీల నుండి నేరుగా సేకరించినవి' : 'Linked directly from field logs'}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-white/85 dark:bg-[#121512] border border-[#F3DF9E] dark:border-[#222D22]">
+              <div className="p-4 rounded-xl bg-white/90 dark:bg-[#121512] border border-[#F3E4AF] dark:border-[#222D22]">
                 <p className="font-mono-tabular text-2xl sm:text-3xl font-bold text-[#B91C1C] dark:text-[#F97316]">
-                  6 Years
+                  {isTe ? '6 ఏళ్లు' : '6 Years'}
                 </p>
                 <p className="text-xs sm:text-sm font-medium text-[#4A2013] dark:text-[#D6D3D1] mt-1">
-                  Continuous Chronicle
+                  {isTe ? 'నిరంతర అభివృద్ధి నివేదిక' : 'Continuous Record'}
                 </p>
                 <p className="text-xs text-[#7C2D12]/80 dark:text-[#A8A29E] mt-0.5">
-                  Feb 2021 – Sep 2026
+                  {isTe ? 'ఫిబ్రవరి 2021 – సెప్టెంబర్ 2026' : 'Feb 2021 – Sep 2026'}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-white/85 dark:bg-[#121512] border border-[#F3DF9E] dark:border-[#222D22]">
+              <div className="p-4 rounded-xl bg-white/90 dark:bg-[#121512] border border-[#F3E4AF] dark:border-[#222D22]">
                 <p className="font-mono-tabular text-2xl sm:text-3xl font-bold text-[#B91C1C] dark:text-[#4ADE80]">
-                  3 Diaries
+                  {isTe ? '3 డైరీలు' : '3 Diaries'}
                 </p>
                 <p className="text-xs sm:text-sm font-medium text-[#4A2013] dark:text-[#D6D3D1] mt-1">
-                  Unified Blogspot Volumes
+                  {isTe ? 'మూడు బ్లాగ్‌స్పాట్ సంపుటాలు' : 'Unified Blogspot Volumes'}
                 </p>
                 <p className="text-xs text-[#7C2D12]/80 dark:text-[#A8A29E] mt-0.5">
-                  Vol. I, II &amp; III linked in full
+                  {isTe ? 'సంపుటం 1, 2 & 3 అనుసంధానం' : 'Vol. I, II & III linked in full'}
                 </p>
               </div>
             </div>
@@ -432,17 +493,19 @@ export default function App() {
         </section>
 
         {/* SECTION 1: FEATURED WORKS (5 Significant Milestones) */}
-        <section id="featured" className="border-b border-[#F3DF9E] dark:border-[#1E291E] bg-[#FEF9E7]/65 dark:bg-[#0D0F0D]">
+        <section id="featured" className="border-b border-[#F3E4AF] dark:border-[#1E291E] bg-[#FFFBEF] dark:bg-[#0D0F0D]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
             <div className="max-w-3xl space-y-2 mb-10">
               <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#B91C1C] dark:text-[#4ADE80] font-semibold">
-                Section 01 · Landmark Milestones
+                {isTe ? 'విభాగం 01 · ప్రధాన మైలురాళ్ళు' : 'Section 01 · Landmark Milestones'}
               </p>
               <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#27120B] dark:text-[#FAFAF9] [text-wrap:balance]">
-                {langMode === 'te' ? 'ప్రధాన అభివృద్ధి పనులు (Featured Works)' : 'Featured Works'}
+                {isTe ? 'ప్రధాన అభివృద్ధి పనులు' : 'Featured Works'}
               </h2>
               <p className="text-base text-[#5C2818] dark:text-[#A8A29E] leading-relaxed">
-                Five transformative works selected across the 2021–2026 development diaries, representing major infrastructure grants, multi-decade civic resolutions, drinking water security, and emergency pandemic relief.
+                {isTe
+                  ? '2021–2026 అభివృద్ధి డైరీల నుండి ఎంపిక చేసిన ఐదు ముఖ్యమైన పనులు — ప్రధాన నిధులు, దశాబ్దాల సమస్యల పరిష్కారం, మంచినీటి విస్తరణ మరియు ఆలయ పునరుద్ధరణ.'
+                  : 'Five transformative works selected across the 2021–2026 development diaries, representing major infrastructure grants, multi-decade civic resolutions, drinking water security, and temple restoration.'}
               </p>
             </div>
 
@@ -452,27 +515,32 @@ export default function App() {
                 {(() => {
                   const lead = featuredWorks[0];
                   const cat = CATEGORIES.find((c) => c.id === lead.category);
-                  const cover = lead.featuredImage || lead.images[0];
+                  const cover = lead.images[0];
+                  const leadHighlight = getWorkHighlight(lead);
                   return (
-                    <article className="grid grid-cols-1 lg:grid-cols-12 rounded-xl overflow-hidden bg-white dark:bg-[#131713] border border-[#E5C97B] dark:border-[#243224] items-stretch">
-                      <div className="lg:col-span-6 relative min-h-[240px] lg:min-h-[320px] bg-[#FEF3C7] dark:bg-[#0A0C0A]">
+                    <article className="grid grid-cols-1 lg:grid-cols-12 rounded-xl overflow-hidden bg-white dark:bg-[#131713] border border-[#EFE0A8] dark:border-[#243224] items-stretch">
+                      <div className="lg:col-span-6 relative min-h-[240px] lg:min-h-[320px] bg-[#FEF7DA] dark:bg-[#0A0C0A]">
                         <ResilientImage
                           src={cover}
-                          alt={lead.enTitle}
-                          fallbackLabel={lead.enTitle}
+                          alt={getWorkTitle(lead)}
+                          fallbackLabel={getWorkTitle(lead)}
                           className="w-full h-full lg:h-full object-cover"
                         />
                       </div>
                       <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between space-y-6">
                         <div className="space-y-3">
                           <div className="flex flex-wrap items-center gap-2 text-xs text-[#7C2D12] dark:text-[#4ADE80] font-medium">
-                            <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#FB923C]">
-                              {lead.highlightMetric}
-                            </span>
+                            {leadHighlight && (
+                              <>
+                                <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#FB923C]">
+                                  {leadHighlight}
+                                </span>
+                                <span aria-hidden="true">·</span>
+                              </>
+                            )}
+                            <span className="font-mono-tabular">{getWorkDate(lead)}</span>
                             <span aria-hidden="true">·</span>
-                            <span className="font-mono-tabular">{lead.dateLabel}</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{cat?.name}</span>
+                            <span>{isTe ? cat?.teName : cat?.name}</span>
                           </div>
                           <h3 className="font-display text-2xl sm:text-3xl font-semibold leading-snug text-[#27120B] dark:text-[#FAFAF9]">
                             {getWorkTitle(lead)}
@@ -481,20 +549,24 @@ export default function App() {
                             {getWorkBody(lead)}
                           </p>
                           {langMode === 'bilingual' && lead.teText && (
-                            <p className="text-sm leading-relaxed text-[#6B3423] dark:text-[#A8A29E] pt-1 line-clamp-3">
+                            <p className="font-telugu text-sm leading-relaxed text-[#6B3423] dark:text-[#A8A29E] pt-1 line-clamp-3">
                               {lead.teText}
                             </p>
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F3DF9E] dark:border-[#222D22]">
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#F3E4AF] dark:border-[#222D22]">
                           <button
                             type="button"
                             onClick={() => setActiveWork(lead)}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#B91C1C] text-white hover:bg-[#991B1B] dark:bg-[#EA580C] dark:hover:bg-[#C2410C] transition-colors whitespace-nowrap shrink-0"
                           >
                             <Camera className="w-4 h-4" aria-hidden="true" />
-                            <span>View Record &amp; Photos ({lead.images.length})</span>
+                            <span>
+                              {isTe
+                                ? `రికార్డు & ఫోటోలు (${lead.images.length})`
+                                : `View Record & Photos (${lead.images.length})`}
+                            </span>
                           </button>
                           <a
                             href={lead.sourceUrl}
@@ -502,7 +574,7 @@ export default function App() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#991B1B] dark:text-[#4ADE80] hover:underline underline-offset-4 whitespace-nowrap shrink-0"
                           >
-                            <span>Original Blogspot Post</span>
+                            <span>{isTe ? 'అసలు బ్లాగ్‌స్పాట్ పోస్ట్' : 'Original Blogspot Post'}</span>
                             <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                           </a>
                         </div>
@@ -515,18 +587,19 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {featuredWorks.slice(1, 5).map((work) => {
                     const cat = CATEGORIES.find((c) => c.id === work.category);
-                    const cover = work.featuredImage || work.images[0];
+                    const cover = work.images[0];
+                    const workHighlight = getWorkHighlight(work);
                     return (
                       <article
                         key={work.id}
-                        className="flex flex-col rounded-xl overflow-hidden bg-white dark:bg-[#131713] border border-[#E5C97B] dark:border-[#243224]"
+                        className="flex flex-col rounded-xl overflow-hidden bg-white dark:bg-[#131713] border border-[#EFE0A8] dark:border-[#243224]"
                       >
                         {cover && (
-                          <div className="aspect-[16/9] w-full overflow-hidden bg-[#FEF3C7] dark:bg-[#0A0C0A] border-b border-[#F3DF9E] dark:border-[#222D22]">
+                          <div className="aspect-[16/9] w-full overflow-hidden bg-[#FEF7DA] dark:bg-[#0A0C0A] border-b border-[#F3E4AF] dark:border-[#222D22]">
                             <ResilientImage
                               src={cover}
-                              alt={work.enTitle}
-                              fallbackLabel={work.enTitle}
+                              alt={getWorkTitle(work)}
+                              fallbackLabel={getWorkTitle(work)}
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -534,17 +607,17 @@ export default function App() {
                         <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                           <div className="space-y-2.5">
                             <div className="flex flex-wrap items-center gap-2 text-xs text-[#7C2D12] dark:text-[#4ADE80] font-medium">
-                              {work.highlightMetric && (
+                              {workHighlight && (
                                 <>
                                   <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#FB923C]">
-                                    {work.highlightMetric}
+                                    {workHighlight}
                                   </span>
                                   <span aria-hidden="true">·</span>
                                 </>
                               )}
-                              <span className="font-mono-tabular">{work.dateLabel}</span>
+                              <span className="font-mono-tabular">{getWorkDate(work)}</span>
                               <span aria-hidden="true">·</span>
-                              <span>{cat?.name}</span>
+                              <span>{isTe ? cat?.teName : cat?.name}</span>
                             </div>
                             <h3 className="font-display text-xl font-semibold leading-snug text-[#27120B] dark:text-[#FAFAF9]">
                               {getWorkTitle(work)}
@@ -554,14 +627,18 @@ export default function App() {
                             </p>
                           </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#F3DF9E] dark:border-[#222D22]">
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#F3E4AF] dark:border-[#222D22]">
                             <button
                               type="button"
                               onClick={() => setActiveWork(work)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#FEF3C7] text-[#991B1B] hover:bg-[#FDE68A] dark:bg-[#1B241B] dark:text-[#4ADE80] dark:hover:bg-[#233223] transition-colors whitespace-nowrap shrink-0"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#FEF7DA] text-[#991B1B] hover:bg-[#FDE68A] dark:bg-[#1B241B] dark:text-[#4ADE80] dark:hover:bg-[#233223] transition-colors whitespace-nowrap shrink-0"
                             >
                               <Camera className="w-3.5 h-3.5" aria-hidden="true" />
-                              <span>Inspect ({work.images.length} photos)</span>
+                              <span>
+                                {isTe
+                                  ? `చూడండి (${work.images.length} ఫోటోలు)`
+                                  : `Inspect (${work.images.length} photos)`}
+                              </span>
                             </button>
                             <a
                               href={work.sourceUrl}
@@ -569,7 +646,7 @@ export default function App() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-xs font-medium text-[#7C2D12] dark:text-[#FB923C] hover:underline underline-offset-4 whitespace-nowrap shrink-0"
                             >
-                              <span>Source Diary</span>
+                              <span>{isTe ? 'మూల డైరీ' : 'Source Diary'}</span>
                               <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                             </a>
                           </div>
@@ -584,18 +661,20 @@ export default function App() {
         </section>
 
         {/* SECTION 2: CATEGORIZED WORKS DIRECTORY */}
-        <section id="categories" className="border-b border-[#F3DF9E] dark:border-[#1E291E]">
+        <section id="categories" className="border-b border-[#F3E4AF] dark:border-[#1E291E]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
               <div className="max-w-2xl space-y-2">
                 <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#B91C1C] dark:text-[#4ADE80] font-semibold">
-                  Section 02 · Organized Civic Index
+                  {isTe ? 'విభాగం 02 · విభాగాల వారీగా పనుల సూచిక' : 'Section 02 · Organized Civic Index'}
                 </p>
                 <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                  {langMode === 'te' ? 'విభాగాల వారీగా పనుల జాబితా' : 'Works Organized by Category'}
+                  {isTe ? 'విభాగాల వారీగా అభివృద్ధి పనులు' : 'Works Organized by Category'}
                 </h2>
                 <p className="text-base text-[#5C2818] dark:text-[#A8A29E] leading-relaxed">
-                  Every recorded project across all three diaries grouped into seven civic categories. Search in English or Telugu, filter by diary volume, or click any work for full records and photographs.
+                  {isTe
+                    ? 'మూడు డైరీలలోని ప్రతి పనిని ఏడు ప్రజా విభాగాలుగా వర్గీకరించబడింది. తెలుగులో వెతకండి, డైరీ సంపుటం వారీగా ఫిల్టర్ చేయండి లేదా పూర్తి వివరాలకు క్లిక్ చేయండి.'
+                    : 'Every recorded project across all three diaries grouped into seven civic categories. Search in English or Telugu, filter by diary volume, or click any work for full records and photographs.'}
                 </p>
               </div>
 
@@ -610,21 +689,25 @@ export default function App() {
                     type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search works (Telugu or English)..."
-                    aria-label="Search development works"
-                    className="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-lg text-sm bg-white dark:bg-[#131713] border border-[#E5C97B] dark:border-[#2A372A] text-[#27120B] dark:text-[#F5F5F4] placeholder:text-[#9A6B56] dark:placeholder:text-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#B91C1C] dark:focus:ring-[#F97316]"
+                    placeholder={
+                      isTe
+                        ? 'పనులను వెతకండి (పేరు లేదా తేదీ)...'
+                        : 'Search works (Telugu or English)...'
+                    }
+                    aria-label={isTe ? 'అభివృద్ధి పనులను వెతకండి' : 'Search development works'}
+                    className="w-full sm:w-64 pl-9 pr-3 py-2.5 rounded-lg text-sm bg-white dark:bg-[#131713] border border-[#EFE0A8] dark:border-[#2A372A] text-[#27120B] dark:text-[#F5F5F4] placeholder:text-[#9A6B56] dark:placeholder:text-[#78716C] focus:outline-none focus:ring-2 focus:ring-[#B91C1C] dark:focus:ring-[#F97316]"
                   />
                 </div>
                 <select
                   value={selectedVolume}
                   onChange={(e) => setSelectedVolume(e.target.value as VolumeId | 'all')}
-                  aria-label="Filter by diary volume"
-                  className="px-3.5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#131713] border border-[#E5C97B] dark:border-[#2A372A] text-[#27120B] dark:text-[#F5F5F4] focus:outline-none focus:ring-2 focus:ring-[#B91C1C] dark:focus:ring-[#F97316]"
+                  aria-label={isTe ? 'డైరీ సంపుటం వారీగా ఫిల్టర్' : 'Filter by diary volume'}
+                  className="px-3.5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-[#131713] border border-[#EFE0A8] dark:border-[#2A372A] text-[#27120B] dark:text-[#F5F5F4] focus:outline-none focus:ring-2 focus:ring-[#B91C1C] dark:focus:ring-[#F97316]"
                 >
-                  <option value="all">All 3 Diary Volumes</option>
-                  <option value="2021">Vol. I (2021–2022)</option>
-                  <option value="2022">Vol. II (2022–2023)</option>
-                  <option value="2024-2026">Vol. III (2024–2026)</option>
+                  <option value="all">{isTe ? 'అన్ని 3 డైరీ సంపుటాలు' : 'All 3 Diary Volumes'}</option>
+                  <option value="2021">{isTe ? 'సంపుటం 1 (2021–2022)' : 'Vol. I (2021–2022)'}</option>
+                  <option value="2022">{isTe ? 'సంపుటం 2 (2022–2023)' : 'Vol. II (2022–2023)'}</option>
+                  <option value="2024-2026">{isTe ? 'సంపుటం 3 (2024–2026)' : 'Vol. III (2024–2026)'}</option>
                 </select>
               </div>
             </div>
@@ -632,8 +715,8 @@ export default function App() {
             {/* Interactive Category Tabs */}
             <div
               role="tablist"
-              aria-label="Filter works by category"
-              className="flex flex-wrap items-center gap-2 pb-8 border-b border-[#F3DF9E] dark:border-[#1E291E] no-print"
+              aria-label={isTe ? 'విభాగాల వారీగా ఫిల్టర్' : 'Filter works by category'}
+              className="flex flex-wrap items-center gap-2 pb-8 border-b border-[#F3E4AF] dark:border-[#1E291E] no-print"
             >
               <button
                 type="button"
@@ -643,10 +726,12 @@ export default function App() {
                 className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   selectedCategory === 'all'
                     ? 'bg-[#B91C1C] text-white dark:bg-[#EA580C] dark:text-white'
-                    : 'bg-[#FEF3C7]/70 text-[#5C2818] hover:bg-[#FEF3C7] dark:bg-[#131813] dark:text-[#D6D3D1] dark:hover:bg-[#1B241B]'
+                    : 'bg-[#FEF7DA]/80 text-[#5C2818] hover:bg-[#FEF7DA] dark:bg-[#131813] dark:text-[#D6D3D1] dark:hover:bg-[#1B241B]'
                 }`}
               >
-                All Categories ({filteredDirectoryWorks.length})
+                {isTe
+                  ? `అన్ని విభాగాలు (${filteredDirectoryWorks.length})`
+                  : `All Categories (${filteredDirectoryWorks.length})`}
               </button>
               {CATEGORIES.map((cat) => {
                 const count = worksByCategory[cat.id].length;
@@ -661,10 +746,10 @@ export default function App() {
                     className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 ${
                       active
                         ? 'bg-[#B91C1C] text-white dark:bg-[#EA580C] dark:text-white'
-                        : 'bg-[#FEF3C7]/70 text-[#5C2818] hover:bg-[#FEF3C7] dark:bg-[#131813] dark:text-[#D6D3D1] dark:hover:bg-[#1B241B]'
+                        : 'bg-[#FEF7DA]/80 text-[#5C2818] hover:bg-[#FEF7DA] dark:bg-[#131813] dark:text-[#D6D3D1] dark:hover:bg-[#1B241B]'
                     }`}
                   >
-                    {langMode === 'te' ? cat.teName : cat.name} ({count})
+                    {isTe ? cat.teName : cat.name} ({count})
                   </button>
                 );
               })}
@@ -674,7 +759,9 @@ export default function App() {
             {filteredDirectoryWorks.length === 0 ? (
               <div className="py-12 text-center space-y-3">
                 <p className="text-base font-medium text-[#5C2818] dark:text-[#D6D3D1]">
-                  No recorded works match “{searchQuery}”.
+                  {isTe
+                    ? `“${searchQuery}” కు సరిపోయే పనులు కనుగొనబడలేదు.`
+                    : `No recorded works match “${searchQuery}”.`}
                 </p>
                 <button
                   type="button"
@@ -685,11 +772,11 @@ export default function App() {
                   }}
                   className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#B91C1C] text-white dark:bg-[#EA580C]"
                 >
-                  Reset Filters
+                  {isTe ? 'ఫిల్టర్లు రీసెట్ చేయండి' : 'Reset Filters'}
                 </button>
               </div>
             ) : (
-              <div className="divide-y divide-[#F3DF9E] dark:divide-[#1E291E]">
+              <div className="divide-y divide-[#F3E4AF] dark:divide-[#1E291E]">
                 {CATEGORIES.filter(
                   (c) => selectedCategory === 'all' || selectedCategory === c.id
                 ).map((cat) => {
@@ -709,19 +796,20 @@ export default function App() {
                           <div className="flex items-center gap-2.5 text-[#B91C1C] dark:text-[#4ADE80]">
                             <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
                             <h3 className="font-display text-xl sm:text-2xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                              {langMode === 'te' ? cat.teName : cat.name}
+                              {isTe ? cat.teName : cat.name}
                             </h3>
                             <span className="font-mono-tabular text-xs font-semibold text-[#7C2D12] dark:text-[#FB923C]">
-                              · {items.length} {items.length === 1 ? 'work' : 'works'}
+                              · {items.length}{' '}
+                              {isTe ? 'పనులు' : items.length === 1 ? 'work' : 'works'}
                             </span>
                           </div>
                           {langMode === 'bilingual' && (
-                            <p className="text-xs font-medium text-[#7C2D12] dark:text-[#A8A29E]">
+                            <p className="font-telugu text-xs font-medium text-[#7C2D12] dark:text-[#A8A29E]">
                               {cat.teName}
                             </p>
                           )}
                           <p className="text-sm text-[#4A2013] dark:text-[#D6D3D1] leading-relaxed">
-                            {langMode === 'te' ? cat.teDescription : cat.description}
+                            {isTe ? cat.teDescription : cat.description}
                           </p>
                         </div>
 
@@ -729,16 +817,20 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => toggleCategoryExpand(cat.id)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold border border-[#E5C97B] dark:border-[#2A382A] bg-white dark:bg-[#131713] text-[#991B1B] dark:text-[#4ADE80] hover:bg-[#FEF3C7] dark:hover:bg-[#1B241B] transition-colors whitespace-nowrap shrink-0 self-start sm:self-auto"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold border border-[#EFE0A8] dark:border-[#2A382A] bg-white dark:bg-[#131713] text-[#991B1B] dark:text-[#4ADE80] hover:bg-[#FEF7DA] dark:hover:bg-[#1B241B] transition-colors whitespace-nowrap shrink-0 self-start sm:self-auto"
                           >
                             {isExpanded ? (
                               <>
-                                <span>Show Fewer</span>
+                                <span>{isTe ? 'తక్కువ చూపించు' : 'Show Fewer'}</span>
                                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
                               </>
                             ) : (
                               <>
-                                <span>Show All {items.length} Works</span>
+                                <span>
+                                  {isTe
+                                    ? `అన్ని ${items.length} పనులు చూపించు`
+                                    : `Show All ${items.length} Works`}
+                                </span>
                                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
                               </>
                             )}
@@ -750,36 +842,53 @@ export default function App() {
                         {visibleItems.map((work) => (
                           <article
                             key={work.id}
-                            className="flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-[#131713] border border-[#F3DF9E] dark:border-[#222D22] hover:border-[#B91C1C]/60 dark:hover:border-[#F97316]/60 transition-colors"
+                            className="flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-[#131713] border border-[#F3E4AF] dark:border-[#222D22] hover:border-[#B91C1C]/60 dark:hover:border-[#F97316]/60 transition-colors"
                           >
-                            <div className="space-y-2.5">
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-[#7C2D12] dark:text-[#A8A29E]">
-                                <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#FB923C]">
-                                  {work.dateLabel}
-                                </span>
-                                <span aria-hidden="true">·</span>
-                                <span>{VOLUMES[work.volume].shortLabel}</span>
-                              </div>
-                              <h4 className="font-display text-base sm:text-lg font-semibold leading-snug text-[#27120B] dark:text-[#FAFAF9]">
+                            <div>
+                              {work.images.length > 0 && (
                                 <button
                                   type="button"
                                   onClick={() => setActiveWork(work)}
-                                  className="text-left hover:text-[#B91C1C] dark:hover:text-[#FB923C] transition-colors"
+                                  className="block w-full aspect-[16/9] overflow-hidden bg-[#FEF7DA] dark:bg-[#0A0C0A] border-b border-[#F3E4AF] dark:border-[#222D22] group"
+                                  aria-label={getWorkTitle(work)}
                                 >
-                                  {getWorkTitle(work)}
+                                  <ResilientImage
+                                    src={work.images[0]}
+                                    alt={getWorkTitle(work)}
+                                    fallbackLabel={getWorkDate(work)}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
                                 </button>
-                              </h4>
-                              <p className="text-sm leading-relaxed text-[#4A2013] dark:text-[#D6D3D1] line-clamp-3">
-                                {getWorkBody(work)}
-                              </p>
-                              {langMode === 'bilingual' && work.teText && (
-                                <p className="text-xs leading-relaxed text-[#7C2D12]/90 dark:text-[#A8A29E] line-clamp-2">
-                                  {work.teText}
-                                </p>
                               )}
+                              <div className="p-5 space-y-2.5">
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-[#7C2D12] dark:text-[#A8A29E]">
+                                  <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#FB923C]">
+                                    {getWorkDate(work)}
+                                  </span>
+                                  <span aria-hidden="true">·</span>
+                                  <span>{getVolumeLabel(work.volume)}</span>
+                                </div>
+                                <h4 className="font-display text-base sm:text-lg font-semibold leading-snug text-[#27120B] dark:text-[#FAFAF9]">
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveWork(work)}
+                                    className="text-left hover:text-[#B91C1C] dark:hover:text-[#FB923C] transition-colors"
+                                  >
+                                    {getWorkTitle(work)}
+                                  </button>
+                                </h4>
+                                <p className="text-sm leading-relaxed text-[#4A2013] dark:text-[#D6D3D1] line-clamp-3">
+                                  {getWorkBody(work)}
+                                </p>
+                                {langMode === 'bilingual' && work.teText && (
+                                  <p className="font-telugu text-xs leading-relaxed text-[#7C2D12]/90 dark:text-[#A8A29E] line-clamp-2">
+                                    {work.teText}
+                                  </p>
+                                )}
+                              </div>
                             </div>
 
-                            <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-[#FEF3C7] dark:border-[#1E271E]">
+                            <div className="flex items-center justify-between gap-3 px-5 pb-5 pt-3 border-t border-[#FEF7DA] dark:border-[#1E271E]">
                               <button
                                 type="button"
                                 onClick={() => setActiveWork(work)}
@@ -788,7 +897,11 @@ export default function App() {
                                 <Camera className="w-3.5 h-3.5" aria-hidden="true" />
                                 <span>
                                   {work.images.length > 0
-                                    ? `View (${work.images.length} photos)`
+                                    ? isTe
+                                      ? `చూడండి (${work.images.length} ఫోటోలు)`
+                                      : `View (${work.images.length} photos)`
+                                    : isTe
+                                    ? 'వివరాలు చదవండి'
                                     : 'Read Record'}
                                 </span>
                               </button>
@@ -798,7 +911,7 @@ export default function App() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs font-medium text-[#6B3423] dark:text-[#A8A29E] hover:text-[#B91C1C] dark:hover:text-[#FB923C] whitespace-nowrap shrink-0"
                               >
-                                <span>Blogspot</span>
+                                <span>{isTe ? 'బ్లాగ్‌స్పాట్' : 'Blogspot'}</span>
                                 <ExternalLink className="w-3 h-3" aria-hidden="true" />
                               </a>
                             </div>
@@ -814,34 +927,46 @@ export default function App() {
         </section>
 
         {/* SECTION 3: CHRONOLOGICAL TIMELINE (2021 - 2026) */}
-        <section id="timeline" className="border-b border-[#F3DF9E] dark:border-[#1E291E] bg-[#FEF9E7]/50 dark:bg-[#0B0D0B]">
+        <section id="timeline" className="border-b border-[#F3E4AF] dark:border-[#1E291E] bg-[#FFFBEF] dark:bg-[#0B0D0B]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
               <div className="max-w-2xl space-y-2">
                 <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#B91C1C] dark:text-[#4ADE80] font-semibold">
-                  Section 03 · Chronological Public Ledger
+                  {isTe ? 'విభాగం 03 · కాలక్రమానుసార ప్రజా నివేదిక' : 'Section 03 · Chronological Public Ledger'}
                 </p>
                 <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                  {langMode === 'te'
+                  {isTe
                     ? '2021–2026 కాలక్రమానుసార అభివృద్ధి టైమ్‌లైన్'
                     : 'Chronological Development Timeline (2021–2026)'}
                 </h2>
                 <p className="text-base text-[#5C2818] dark:text-[#A8A29E] leading-relaxed">
-                  Every dated record from the February 9, 2021 election through September 10, 2026 arranged chronologically across all three diaries, with key milestones highlighted.
+                  {isTe
+                    ? 'ఫిబ్రవరి 9, 2021 ఎన్నిక నుండి సెప్టెంబర్ 10, 2026 వరకు మూడు డైరీలలోని ప్రతి తేదీ వారీ కార్యక్రమం ముఖ్య మైలురాళ్ళతో సహా కాలక్రమానుసారంగా పొందుపరచబడింది.'
+                    : 'Every dated record from the February 9, 2021 election through September 10, 2026 arranged chronologically across all three diaries, with key milestones highlighted.'}
                 </p>
               </div>
 
               {/* Timeline Mode Controls */}
               <div
                 role="group"
-                aria-label="Timeline detail filter"
-                className="inline-flex flex-wrap items-center p-1 rounded-lg bg-[#FEF3C7] dark:bg-[#141814] border border-[#F5D08A] dark:border-[#243224] no-print self-start lg:self-auto"
+                aria-label={isTe ? 'టైమ్‌లైన్ ఫిల్టర్' : 'Timeline detail filter'}
+                className="inline-flex flex-wrap items-center p-1 rounded-lg bg-[#FEF7DA] dark:bg-[#141814] border border-[#EFE0A8] dark:border-[#243224] no-print self-start lg:self-auto"
               >
                 {(
                   [
-                    ['written', `Documented Works (${writtenWorksCount})`],
-                    ['milestones', 'Key Milestones'],
-                    ['all', `All Entries + Photo Logs (${PANCHAYAT_WORKS.length})`],
+                    [
+                      'written',
+                      isTe
+                        ? `నమోదైన పనులు (${writtenWorksCount})`
+                        : `Documented Works (${writtenWorksCount})`,
+                    ],
+                    ['milestones', isTe ? 'ముఖ్య మైలురాళ్ళు' : 'Key Milestones'],
+                    [
+                      'all',
+                      isTe
+                        ? `అన్ని నమోదులు + ఫోటోలు (${PANCHAYAT_WORKS.length})`
+                        : `All Entries + Photo Logs (${PANCHAYAT_WORKS.length})`,
+                    ],
                   ] as const
                 ).map(([mode, label]) => (
                   <button
@@ -862,17 +987,17 @@ export default function App() {
             </div>
 
             {/* Year Selector Rail */}
-            <div className="flex flex-wrap items-center gap-2 pb-10 border-b border-[#F3DF9E] dark:border-[#1E291E] no-print">
+            <div className="flex flex-wrap items-center gap-2 pb-10 border-b border-[#F3E4AF] dark:border-[#1E291E] no-print">
               <button
                 type="button"
                 onClick={() => setTimelineYear('all')}
                 className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-mono-tabular font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   timelineYear === 'all'
                     ? 'bg-[#B91C1C] text-white dark:bg-[#16A34A] dark:text-[#050805]'
-                    : 'bg-white text-[#5C2818] border border-[#E5C97B] hover:bg-[#FEF3C7] dark:bg-[#131713] dark:text-[#D6D3D1] dark:border-[#243224] dark:hover:bg-[#1B241B]'
+                    : 'bg-white text-[#5C2818] border border-[#EFE0A8] hover:bg-[#FEF7DA] dark:bg-[#131713] dark:text-[#D6D3D1] dark:border-[#243224] dark:hover:bg-[#1B241B]'
                 }`}
               >
-                All Years (2021–2026)
+                {isTe ? 'అన్ని సంవత్సరాలు (2021–2026)' : 'All Years (2021–2026)'}
               </button>
               {timelineYears.map((yr) => (
                 <button
@@ -882,7 +1007,7 @@ export default function App() {
                   className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-mono-tabular font-semibold transition-colors whitespace-nowrap shrink-0 ${
                     timelineYear === yr
                       ? 'bg-[#B91C1C] text-white dark:bg-[#16A34A] dark:text-[#050805]'
-                      : 'bg-white text-[#5C2818] border border-[#E5C97B] hover:bg-[#FEF3C7] dark:bg-[#131713] dark:text-[#D6D3D1] dark:border-[#243224] dark:hover:bg-[#1B241B]'
+                      : 'bg-white text-[#5C2818] border border-[#EFE0A8] hover:bg-[#FEF7DA] dark:bg-[#131713] dark:text-[#D6D3D1] dark:border-[#243224] dark:hover:bg-[#1B241B]'
                   }`}
                 >
                   {yr}
@@ -895,20 +1020,33 @@ export default function App() {
               {timelineGroupedByYear.map(([yr, entries]) => (
                 <div key={yr} className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
                   {/* Year Rail Header */}
-                  <div className="lg:col-span-3 lg:sticky lg:top-24 space-y-2 pb-4 lg:pb-0 border-b lg:border-b-0 border-[#F3DF9E] dark:border-[#1E291E]">
+                  <div className="lg:col-span-3 lg:sticky lg:top-24 space-y-2 pb-4 lg:pb-0 border-b lg:border-b-0 border-[#F3E4AF] dark:border-[#1E291E]">
                     <p className="font-display text-4xl sm:text-5xl font-bold font-mono-tabular text-[#B91C1C] dark:text-[#F97316]">
                       {yr}
                     </p>
                     <p className="text-xs font-mono-tabular uppercase tracking-wider text-[#7C2D12] dark:text-[#4ADE80] font-semibold">
-                      {entries.length} {entries.length === 1 ? 'entry' : 'entries'} recorded
+                      {entries.length}{' '}
+                      {isTe ? 'నమోదులు' : entries.length === 1 ? 'entry recorded' : 'entries recorded'}
                     </p>
                     <p className="text-xs text-[#5C2818] dark:text-[#A8A29E] leading-relaxed">
-                      {yr === 2021 && 'Year 1 · Council Election, Streetlights, COVID-19 Oxygen Relief & Tulasi Kalyana Mandapam'}
-                      {yr === 2022 && 'Year 2 · Ward 6 40-Year Drain Resolution, Water Pipelines, Kolatam & 2,000 Saplings'}
-                      {yr === 2023 && 'Year 3 · SC Colony L-Drainage, Sri Ramalayam & Maridi Talli Temple Restorations'}
-                      {yr === 2024 && 'Year 4 · CC Roads, ₹4.5L Palle Panduga Platform & Anganwadi Sanitation'}
-                      {yr === 2025 && 'Year 5 · SC Colony Stage Modernization, Mandal Grant & Cyclone Bund Repair'}
-                      {yr === 2026 && 'Year 6 · Main Drain Desilting & SC Colony Open Well Restoration'}
+                      {isTe
+                        ? TELUGU_YEAR_SUMMARIES[yr]
+                        : (
+                            <>
+                              {yr === 2021 &&
+                                'Year 1 · Council Election, Streetlights, COVID-19 Oxygen Relief & Tulasi Kalyana Mandapam'}
+                              {yr === 2022 &&
+                                'Year 2 · Ward 6 40-Year Drain Resolution, Water Pipelines, Kolatam & 2,000 Saplings'}
+                              {yr === 2023 &&
+                                'Year 3 · SC Colony L-Drainage, Sri Ramalayam & Maridi Talli Temple Restorations'}
+                              {yr === 2024 &&
+                                'Year 4 · CC Roads, ₹4.5L Palle Panduga Platform & Anganwadi Sanitation'}
+                              {yr === 2025 &&
+                                'Year 5 · SC Colony Stage Modernization, Mandal Grant & Cyclone Bund Repair'}
+                              {yr === 2026 &&
+                                'Year 6 · Main Drain Desilting & SC Colony Open Well Restoration'}
+                            </>
+                          )}
                     </p>
                   </div>
 
@@ -917,13 +1055,14 @@ export default function App() {
                     {entries.map((work) => {
                       const cat = CATEGORIES.find((c) => c.id === work.category);
                       const isKey = Boolean(work.isMilestone || work.isFeatured);
+                      const workHighlight = getWorkHighlight(work);
                       return (
                         <article
                           key={work.id}
                           className={`p-5 sm:p-6 rounded-xl border transition-colors ${
                             isKey
                               ? 'bg-white dark:bg-[#141A14] border-[#B91C1C]/45 dark:border-[#F97316]/55'
-                              : 'bg-white/85 dark:bg-[#111411] border-[#F3DF9E] dark:border-[#202920]'
+                              : 'bg-white/90 dark:bg-[#111411] border-[#F3E4AF] dark:border-[#202920]'
                           }`}
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -936,21 +1075,21 @@ export default function App() {
                                       : 'text-[#7C2D12] dark:text-[#4ADE80]'
                                   }`}
                                 >
-                                  {work.dateLabel}
+                                  {getWorkDate(work)}
                                 </span>
                                 <span className="text-[#9A6B56] dark:text-[#78716C]" aria-hidden="true">
                                   ·
                                 </span>
                                 <span className="text-[#6B3423] dark:text-[#A8A29E]">
-                                  {cat?.name}
+                                  {isTe ? cat?.teName : cat?.name}
                                 </span>
-                                {work.highlightMetric && (
+                                {workHighlight && (
                                   <>
                                     <span className="text-[#9A6B56] dark:text-[#78716C]" aria-hidden="true">
                                       ·
                                     </span>
                                     <span className="font-mono-tabular font-semibold text-[#B91C1C] dark:text-[#4ADE80]">
-                                      {work.highlightMetric}
+                                      {workHighlight}
                                     </span>
                                   </>
                                 )}
@@ -971,7 +1110,7 @@ export default function App() {
                               </p>
 
                               {langMode === 'bilingual' && work.teText && (
-                                <p className="text-xs sm:text-sm leading-relaxed text-[#6B3423] dark:text-[#A8A29E] pt-0.5">
+                                <p className="font-telugu text-xs sm:text-sm leading-relaxed text-[#6B3423] dark:text-[#A8A29E] pt-0.5">
                                   {work.teText}
                                 </p>
                               )}
@@ -985,7 +1124,13 @@ export default function App() {
                                   <Camera className="w-3.5 h-3.5" aria-hidden="true" />
                                   <span>
                                     {work.images.length > 0
-                                      ? `View ${work.images.length} Field ${work.images.length === 1 ? 'Photo' : 'Photos'}`
+                                      ? isTe
+                                        ? `${work.images.length} క్షేత్ర ఫోటోలు చూడండి`
+                                        : `View ${work.images.length} Field ${
+                                            work.images.length === 1 ? 'Photo' : 'Photos'
+                                          }`
+                                      : isTe
+                                      ? 'వివరాలు చూడండి'
                                       : 'View Details'}
                                   </span>
                                 </button>
@@ -995,7 +1140,7 @@ export default function App() {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 text-xs font-medium text-[#6B3423] dark:text-[#A8A29E] hover:text-[#B91C1C] dark:hover:text-[#FB923C]"
                                 >
-                                  <span>{VOLUMES[work.volume].shortLabel}</span>
+                                  <span>{getVolumeLabel(work.volume)}</span>
                                   <ExternalLink className="w-3 h-3" aria-hidden="true" />
                                 </a>
                               </div>
@@ -1005,13 +1150,13 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => setActiveWork(work)}
-                                className="relative w-full sm:w-32 h-40 sm:h-24 shrink-0 rounded-lg overflow-hidden border border-[#E5C97B] dark:border-[#243224] bg-[#FEF3C7] dark:bg-[#0A0C0A] group"
-                                aria-label={`Open ${work.images.length} photos for ${work.enTitle}`}
+                                className="relative w-full sm:w-32 h-40 sm:h-24 shrink-0 rounded-lg overflow-hidden border border-[#EFE0A8] dark:border-[#243224] bg-[#FEF7DA] dark:bg-[#0A0C0A] group"
+                                aria-label={getWorkTitle(work)}
                               >
                                 <ResilientImage
                                   src={work.images[0]}
-                                  alt={work.enTitle}
-                                  fallbackLabel={work.dateLabel}
+                                  alt={getWorkTitle(work)}
+                                  fallbackLabel={getWorkDate(work)}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                 />
                               </button>
@@ -1028,17 +1173,19 @@ export default function App() {
         </section>
 
         {/* SECTION 4: ORIGINAL BLOGSPOT VOLUMES & SHAREABLE SUMMARY */}
-        <section id="archives" className="bg-[#FFFBEB] dark:bg-[#090A09]">
+        <section id="archives" className="bg-[#FFFDF4] dark:bg-[#090A09]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 space-y-10">
             <div className="max-w-2xl space-y-2">
               <p className="text-xs font-mono-tabular uppercase tracking-widest text-[#B91C1C] dark:text-[#4ADE80] font-semibold">
-                Section 04 · Source Records &amp; Sharing
+                {isTe ? 'విభాగం 04 · మూల డైరీలు & షేరింగ్' : 'Section 04 · Source Records & Sharing'}
               </p>
               <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                Original Blogspot Development Diaries
+                {isTe ? 'అసలు బ్లాగ్‌స్పాట్ అభివృద్ధి డైరీలు' : 'Original Blogspot Development Diaries'}
               </h2>
               <p className="text-base text-[#5C2818] dark:text-[#A8A29E] leading-relaxed">
-                All works, dates, and field photographs listed on this page are compiled directly from the three official Thimmarajupeta Grama Panchayat Development Diary blog posts.
+                {isTe
+                  ? 'ఈ పేజీలో ఉన్న అన్ని పనులు, తేదీలు మరియు క్షేత్ర ఫోటోలు తిమ్మరాజుపేట గ్రామ పంచాయతీ మూడు అధికారిక బ్లాగ్‌స్పాట్ అభివృద్ధి డైరీల నుండి నేరుగా సేకరించబడినవి.'
+                  : 'All works, dates, and field photographs listed on this page are compiled directly from the three official Thimmarajupeta Grama Panchayat Development Diary blog posts.'}
               </p>
             </div>
 
@@ -1046,36 +1193,59 @@ export default function App() {
               {(Object.values(VOLUMES) as typeof VOLUMES[VolumeId][]).map((vol) => {
                 const volWorks = PANCHAYAT_WORKS.filter((w) => w.volume === vol.id);
                 const volPhotos = volWorks.reduce((acc, w) => acc + w.images.length, 0);
+                const volCoverWork = volWorks.find((w) => w.images.length > 0);
+                const teVol = TELUGU_VOLUMES[vol.id];
                 return (
                   <div
                     key={vol.id}
-                    className="flex flex-col justify-between p-6 rounded-xl bg-white dark:bg-[#131713] border border-[#E5C97B] dark:border-[#243224] space-y-5"
+                    className="flex flex-col justify-between overflow-hidden rounded-xl bg-white dark:bg-[#131713] border border-[#EFE0A8] dark:border-[#243224]"
                   >
-                    <div className="space-y-2.5">
-                      <p className="text-xs font-mono-tabular uppercase tracking-wider text-[#B91C1C] dark:text-[#FB923C] font-semibold">
-                        {vol.shortLabel} · {vol.period}
-                      </p>
-                      <h3 className="font-display text-xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                        {langMode === 'te' ? vol.teTitle : vol.title}
-                      </h3>
-                      <p className="text-sm text-[#4A2013] dark:text-[#D6D3D1] leading-relaxed">
-                        {vol.summary}
-                      </p>
+                    <div>
+                      {volCoverWork && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveWork(volCoverWork)}
+                          className="block w-full aspect-[16/9] overflow-hidden bg-[#FEF7DA] dark:bg-[#0A0C0A] border-b border-[#F3E4AF] dark:border-[#222D22] group"
+                          aria-label={isTe ? vol.teTitle : vol.title}
+                        >
+                          <ResilientImage
+                            src={volCoverWork.images[0]}
+                            alt={isTe ? vol.teTitle : vol.title}
+                            fallbackLabel={isTe ? teVol.shortLabel : vol.shortLabel}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        </button>
+                      )}
+                      <div className="p-6 space-y-2.5">
+                        <p className="text-xs font-mono-tabular uppercase tracking-wider text-[#B91C1C] dark:text-[#FB923C] font-semibold">
+                          {isTe ? `${teVol.shortLabel} · ${teVol.period}` : `${vol.shortLabel} · ${vol.period}`}
+                        </p>
+                        <h3 className="font-display text-xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
+                          {isTe ? vol.teTitle : vol.title}
+                        </h3>
+                        <p className="text-sm text-[#4A2013] dark:text-[#D6D3D1] leading-relaxed">
+                          {isTe ? teVol.summary : vol.summary}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t border-[#F3DF9E] dark:border-[#222D22]">
+                    <div className="space-y-4 px-6 pb-6 pt-4 border-t border-[#F3E4AF] dark:border-[#222D22]">
                       <div className="flex items-center gap-3 text-xs font-mono-tabular text-[#6B3423] dark:text-[#4ADE80]">
-                        <span>{volWorks.length} dated entries</span>
+                        <span>
+                          {volWorks.length} {isTe ? 'తేదీల నమోదులు' : 'dated entries'}
+                        </span>
                         <span aria-hidden="true">·</span>
-                        <span>{volPhotos} photos</span>
+                        <span>
+                          {volPhotos} {isTe ? 'ఫోటోలు' : 'photos'}
+                        </span>
                       </div>
                       <a
                         href={vol.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-semibold bg-[#FEF3C7] text-[#991B1B] hover:bg-[#FDE68A] dark:bg-[#1B241B] dark:text-[#4ADE80] dark:hover:bg-[#233223] transition-colors"
+                        className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-lg text-sm font-semibold bg-[#FEF7DA] text-[#991B1B] hover:bg-[#FDE68A] dark:bg-[#1B241B] dark:text-[#4ADE80] dark:hover:bg-[#233223] transition-colors"
                       >
-                        <span>Visit Original Diary</span>
+                        <span>{isTe ? 'అసలు డైరీని చూడండి' : 'Visit Original Diary'}</span>
                         <ExternalLink className="w-4 h-4" aria-hidden="true" />
                       </a>
                     </div>
@@ -1085,13 +1255,17 @@ export default function App() {
             </div>
 
             {/* Shareable Actions Box */}
-            <div className="p-6 sm:p-8 rounded-xl bg-[#FEF3C7]/80 dark:bg-[#131813] border border-[#E5C97B] dark:border-[#273627] flex flex-col md:flex-row md:items-center justify-between gap-6 no-print">
+            <div className="p-6 sm:p-8 rounded-xl bg-[#FEF7DA]/85 dark:bg-[#131813] border border-[#EFE0A8] dark:border-[#273627] flex flex-col md:flex-row md:items-center justify-between gap-6 no-print">
               <div className="space-y-1.5 max-w-xl">
                 <h3 className="font-display text-xl font-semibold text-[#27120B] dark:text-[#FAFAF9]">
-                  Share This Chronicle With Villagers &amp; Well-Wishers
+                  {isTe
+                    ? 'మన తిమ్మరాజుపేట నివేదికను గ్రామస్తులతో షేర్ చేయండి'
+                    : 'Share MANA THIMMARAJUPETA With Villagers & Well-Wishers'}
                 </h3>
                 <p className="text-sm text-[#4A2013] dark:text-[#D6D3D1]">
-                  Send a direct link via WhatsApp, copy the web address, or print a clean summary for community noticeboards.
+                  {isTe
+                    ? 'వాట్సాప్ ద్వారా నేరుగా లింక్ పంపండి, వెబ్ చిరునామాను కాపీ చేయండి లేదా నోటీసు బోర్డు కోసం ప్రింట్ తీసుకోండి.'
+                    : 'Send a direct link via WhatsApp, copy the web address, or print a clean summary for community noticeboards.'}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -1101,23 +1275,31 @@ export default function App() {
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-[#B91C1C] text-white hover:bg-[#991B1B] dark:bg-[#EA580C] dark:hover:bg-[#C2410C] transition-colors whitespace-nowrap shrink-0"
                 >
                   {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                  <span>{copiedLink ? 'Copied!' : 'Copy Share Link'}</span>
+                  <span>
+                    {copiedLink
+                      ? isTe
+                        ? 'కాపీ అయింది!'
+                        : 'Copied!'
+                      : isTe
+                      ? 'షేర్ లింక్ కాపీ చేయండి'
+                      : 'Copy Share Link'}
+                  </span>
                 </button>
                 <button
                   type="button"
                   onClick={handleWhatsAppShare}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-[#27120B] border border-[#E5C97B] hover:bg-[#FFFBEB] dark:bg-[#16A34A] dark:text-[#050805] dark:border-[#16A34A] dark:hover:bg-[#22C55E] transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-[#27120B] border border-[#EFE0A8] hover:bg-[#FFFDF4] dark:bg-[#16A34A] dark:text-[#050805] dark:border-[#16A34A] dark:hover:bg-[#22C55E] transition-colors whitespace-nowrap shrink-0"
                 >
-                  <span>Share via WhatsApp</span>
+                  <span>{isTe ? 'వాట్సాప్‌లో షేర్ చేయండి' : 'Share via WhatsApp'}</span>
                   <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-[#5C2818] border border-[#E5C97B] hover:bg-[#FFFBEB] dark:bg-[#191D19] dark:text-[#E7E5E4] dark:border-[#2C382C] dark:hover:bg-[#222822] transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-white text-[#5C2818] border border-[#EFE0A8] hover:bg-[#FFFDF4] dark:bg-[#191D19] dark:text-[#E7E5E4] dark:border-[#2C382C] dark:hover:bg-[#222822] transition-colors whitespace-nowrap shrink-0"
                 >
                   <Printer className="w-4 h-4" aria-hidden="true" />
-                  <span>Print Summary</span>
+                  <span>{isTe ? 'సారాంశం ప్రింట్ చేయండి' : 'Print Summary'}</span>
                 </button>
               </div>
             </div>
@@ -1125,28 +1307,35 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-[#F3DF9E] dark:border-[#1E291E] bg-[#FEF9E7] dark:bg-[#070807] py-8">
+      <footer className="border-t border-[#F3E4AF] dark:border-[#1E291E] bg-[#FFFBEF] dark:bg-[#070807] py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#6B3423] dark:text-[#A8A29E]">
-          <div>
+          <div className="space-y-1">
             <p className="font-semibold text-[#27120B] dark:text-[#E7E5E4]">
-              Thimmarajupeta Grama Panchayat · Atchutapuram Mandal
+              {isTe
+                ? 'తిమ్మరాజుపేట గ్రామ పంచాయతీ · అచ్యుతాపురం మండలం'
+                : 'Thimmarajupeta Grama Panchayat · Atchutapuram Mandal'}
             </p>
-            <p className="mt-0.5">
-              Public development archive compiled from the 2021–2026 Grama Development Diaries.
+            <p>
+              {isTe
+                ? '2021–2026 గ్రామ డెవలప్మెంట్ డైరీల నుండి రూపొందించిన ప్రజా అభివృద్ధి నివేదిక.'
+                : 'Public development archive compiled from the 2021–2026 Grama Development Diaries.'}
+            </p>
+            <p className="font-semibold text-[#B91C1C] dark:text-[#FB923C] pt-1">
+              {isTe ? 'రచన & సంకలనం: శరగడం శంకర్' : 'BY: Saragadam Shakar'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <a href="#featured" className="hover:underline">
-              Featured
+              {isTe ? 'ప్రధాన పనులు' : 'Featured'}
             </a>
             <a href="#categories" className="hover:underline">
-              Categories
+              {isTe ? 'విభాగాలు' : 'Categories'}
             </a>
             <a href="#timeline" className="hover:underline">
-              Timeline
+              {isTe ? 'టైమ్‌లైన్' : 'Timeline'}
             </a>
             <a href="#archives" className="hover:underline">
-              Source Diaries
+              {isTe ? 'మూల డైరీలు' : 'Source Diaries'}
             </a>
           </div>
         </div>

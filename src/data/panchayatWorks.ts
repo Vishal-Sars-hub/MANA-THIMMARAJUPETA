@@ -46,7 +46,6 @@ export interface PanchayatWork {
   isFeatured?: boolean;
   isMilestone?: boolean;
   isPhotoOnly?: boolean;
-  featuredImage?: string;
 }
 
 export const VOLUMES: Record<VolumeId, VolumeMeta> = {
@@ -157,7 +156,6 @@ interface WorkEnrichment {
   highlightMetric?: string;
   isFeatured?: boolean;
   isMilestone?: boolean;
-  featuredImage?: string;
 }
 
 const ENRICHMENTS: Record<string, WorkEnrichment> = {
@@ -284,7 +282,6 @@ const ENRICHMENTS: Record<string, WorkEnrichment> = {
     highlightMetric: 'COVID Oxygen Reserve',
     isFeatured: true,
     isMilestone: true,
-    featuredImage: '/src/assets/images/hero_thimmarajupeta_village_1794880861388.jpg',
   },
   '2021-16': {
     isoDate: '2021-05-22',
@@ -385,7 +382,6 @@ const ENRICHMENTS: Record<string, WorkEnrichment> = {
     highlightMetric: '₹25 Lakh Facility',
     isFeatured: true,
     isMilestone: true,
-    featuredImage: '/src/assets/images/featured_kalyana_mandapam_1794880861286.jpg',
   },
   '2021-28': {
     isoDate: '2021-07-09',
@@ -644,7 +640,6 @@ const ENRICHMENTS: Record<string, WorkEnrichment> = {
     highlightMetric: '40-Year Dispute Resolved',
     isFeatured: true,
     isMilestone: true,
-    featuredImage: '/src/assets/images/featured_water_infra_1794880860588.jpg',
   },
   '2022-05': {
     isoDate: '2022-02-27',
@@ -1075,7 +1070,6 @@ const ENRICHMENTS: Record<string, WorkEnrichment> = {
     highlightMetric: 'Temple Restoration',
     isFeatured: true,
     isMilestone: true,
-    featuredImage: '/src/assets/images/featured_temple_culture_1794880866205.jpg',
   },
   '2022-57': {
     isoDate: '2023-07-16',
@@ -1715,7 +1709,6 @@ function buildWorks(): PanchayatWork[] {
       isFeatured: meta.isFeatured,
       isMilestone: meta.isMilestone,
       isPhotoOnly,
-      featuredImage: meta.featuredImage,
     });
   }
   return list.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
